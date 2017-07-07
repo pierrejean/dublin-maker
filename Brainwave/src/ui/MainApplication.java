@@ -51,7 +51,13 @@ public class MainApplication extends Application {
 	private Timeline timeline = null;
 	private int time = 50;
 	private Text counterText = new Text();
+	private Button goButton = new Button();
 	private final AtomicInteger data = new AtomicInteger(0);
+	
+	public static int WIDTH=1600;
+	public static int HEIGHT=825;
+	public static int CIRCLES=25;
+	
 	// private CubicCurve cubic = new CubicCurve();
 
 	public static void main(String[] args) {
@@ -109,7 +115,7 @@ public class MainApplication extends Application {
 	@Override
 	public void start(Stage primaryStage) {
 		Group root = new Group();
-		Scene scene = new Scene(root, 1200, 800, Color.WHITE);
+		Scene scene = new Scene(root, MainApplication.WIDTH , MainApplication.HEIGHT, Color.WHITE);
 		primaryStage.setScene(scene);
 		scene.getStylesheets().add(MainApplication.class.getResource("style.css").toExternalForm());
 		
@@ -142,7 +148,7 @@ public class MainApplication extends Application {
 		this.counterText.setTextAlignment(TextAlignment.RIGHT);
 		this.counterText.setId("fancytext");
 		this.counterText.setFill(Color.RED);
-		this.counterText.setX(850);
+		this.counterText.setX(MainApplication.WIDTH *0.78);
 		this.counterText.setY(250);
 		return this.counterText;
 	}
@@ -158,7 +164,7 @@ public class MainApplication extends Application {
 		colors.heightProperty().bind(scene.heightProperty());
 
 		Group circles = new Group();
-		for (int i = 0; i < 10; i++) {
+		for (int i = 0; i < MainApplication.CIRCLES; i++) {
 			Circle circle = new Circle(150, Color.web("darkblue", 0.75));
 			
 			circle.setStrokeType(StrokeType.OUTSIDE);
@@ -175,9 +181,9 @@ public class MainApplication extends Application {
 
 		for (Node circle : circles.getChildren()) {
 			timeline.getKeyFrames()
-					.addAll(new KeyFrame(Duration.ZERO, new KeyValue(circle.translateXProperty(), random() * 800),
+					.addAll(new KeyFrame(Duration.ZERO, new KeyValue(circle.translateXProperty(), random() * MainApplication.WIDTH),
 							new KeyValue(circle.translateYProperty(), random() * 600 + 300)),
-							new KeyFrame(new Duration(40000), new KeyValue(circle.translateXProperty(), random() * 800),
+							new KeyFrame(new Duration(40000), new KeyValue(circle.translateXProperty(), random() * MainApplication.WIDTH),
 									new KeyValue(circle.translateYProperty(), random() * 60)));
 		}
 		timeline.setCycleCount(Animation.INDEFINITE);
@@ -187,17 +193,17 @@ public class MainApplication extends Application {
 	private BorderPane createButtonGo() {
 		BorderPane borderPane = new BorderPane();
 		
-		Button btn = new Button();
-		btn.setText("GO");
-		btn.setId("shiny-orange");
 		
-		btn.setAlignment(Pos.CENTER);
-		btn.setOnAction(new EventHandler<ActionEvent>() {
+		goButton.setText("GO");
+		goButton.setId("shiny-orange");
+		
+		goButton.setAlignment(Pos.CENTER);
+		goButton.setOnAction(new EventHandler<ActionEvent>() {
 			@Override
 			public void handle(ActionEvent event) {
 				mindwaveThread = new Thread(new Mindwave(data));
 				mindwaveThread.start();
-				counterText.setText(""+time);
+				goButton.setVisible(false);
 				
 				PauseTransition wait = new PauseTransition(Duration.seconds(5));
 				wait.setOnFinished((e) -> {
@@ -205,11 +211,25 @@ public class MainApplication extends Application {
 					wait.playFromStart();
 				});
 				wait.play();
+				
+				
+				PauseTransition counter = new PauseTransition(Duration.seconds(1));
+				counter.setOnFinished((e) -> {
+					counterText.setText(""+time);
+					time = time - 1;
+					if ( time >= 0 ){
+						counter.playFromStart();	
+					}else{
+						goButton.setVisible(true);
+						time = 50;
+					}
+				});
+				counter.play();
 
 			}
 		});
 		borderPane.setPadding(new Insets(50));
-		borderPane.setBottom(btn);
+		borderPane.setBottom(goButton);
 		return borderPane;
 	}
 
@@ -222,8 +242,8 @@ public class MainApplication extends Application {
 			timeline.play();
 		}
 		
-		time = time - 5;
-		this.counterText.setText(""+time);
+		
+		
 		
 
 	}
