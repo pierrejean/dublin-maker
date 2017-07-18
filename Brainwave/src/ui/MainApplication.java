@@ -3,6 +3,7 @@ package ui;
 import javafx.animation.Animation;
 import javafx.animation.KeyFrame;
 import javafx.animation.KeyValue;
+import javafx.animation.PathTransition;
 import javafx.animation.PauseTransition;
 import javafx.animation.Timeline;
 import javafx.application.Application;
@@ -17,32 +18,37 @@ import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.effect.BlendMode;
 import javafx.scene.effect.BoxBlur;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.GridPane;
-import javafx.scene.layout.VBox;
+import javafx.scene.media.Media;
+import javafx.scene.media.MediaPlayer;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.CycleMethod;
 import javafx.scene.paint.LinearGradient;
 import javafx.scene.paint.Stop;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.CubicCurve;
-import javafx.scene.shape.Line;
+import javafx.scene.shape.LineTo;
+import javafx.scene.shape.MoveTo;
+import javafx.scene.shape.Path;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.shape.StrokeType;
-import javafx.scene.text.Font;
-import javafx.scene.text.FontSmoothingType;
 import javafx.scene.text.Text;
 import javafx.scene.text.TextAlignment;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
 import javafx.util.Duration;
 import main.process.Mindwave;
-
 import static java.lang.Math.random;
 
+import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import com.sun.javafx.tk.FontMetrics;
+
+import main.rxtx.PortCommunication;
 
 public class MainApplication extends Application {
 
@@ -54,11 +60,21 @@ public class MainApplication extends Application {
 	private Button goButton = new Button();
 	private final AtomicInteger data = new AtomicInteger(0);
 	
+	private PortCommunication portCommunication = new PortCommunication("COM14");
+		
+	private PathTransition pathTransitionSinus = new PathTransition();
+	
+	
+	private Text calculationText = new Text();
+	private PathTransition pathTransitionCalculationText = new PathTransition();
+	
+	private MediaPlayer mediaPlayer = null;
+	
 	public static int WIDTH=1600;
 	public static int HEIGHT=825;
 	public static int CIRCLES=25;
 	
-	// private CubicCurve cubic = new CubicCurve();
+	private int multiplcatorFactor = 1;
 
 	public static void main(String[] args) {
 		launch(args);
@@ -67,79 +83,128 @@ public class MainApplication extends Application {
 	public MainApplication() {
 		// mindwaveMobile = new MindwaveMobile( );
 		timeline = new Timeline();
+
+		try {
+			// portCommunication.connect();
+		} catch (Exception e) {
+			System.out.println("Error connection port COM");
+			e.printStackTrace();
+			this.exit();
+		}
 	}
 	
-//	private void drawLine(Group root, float x0, float y0, float x1, float y1 ){
-//		Line line = new Line();
-//		line.setStartX( x0 );
-//		line.setStartY( y0 );
-//		line.setEndX( x1 );
-//		line.setEndY( y1);
-//		line.setStrokeWidth(2f);
-//		line.setStroke(Color.ALICEBLUE);
-//		
-//		root.getChildren().add(line);s
-//	}
-	
 
-//	private void moveCurveOnX( float minuX){
-//		cubic.setStartX( cubic.getStartX() - minuX);
-//		// cubic.setStartY( cubic.getStartY() - minuX);
-//		cubic.setControlX1( cubic.getControlX1() - minuX);
-//		//cubic.setControlY1( cubic.getControlY1() - minuX);
-//		cubic.setControlX2( cubic.getControlX2() - minuX);
-//		//cubic.setControlY2( cubic.getControlY2() - minuX);
-//		cubic.setEndX( cubic.getEndX() - minuX );
-//		// cubic.setEndY( cubic.getEndY() - minuX );
-//	}
 	
+	private	 Group createCurve(Group g){
+		Path path = new Path();
+		path.getElements().add(new MoveTo(100,90));
+		path.getElements().add(new LineTo( MainApplication.WIDTH,90));
 	
-//	private void drawCurve(Group root, float x0, float y0, float x1, float y1 ){
-//
-//		
-//		cubic.setStartX(x0);
-//		cubic.setStartY(y0);
-//		cubic.setControlX1(25.0f);
-//		cubic.setControlY1(0.0f);
-//		cubic.setControlX2(25.0f);
-//		cubic.setControlY2(100.0f);
-//		cubic.setEndX(x1);
-//		cubic.setEndY(y1);
-//		cubic.setStrokeWidth(15f);
-//		cubic.setStroke(Color.ALICEBLUE);
-//		cubic.setStyle("-fx-smooth: true");
-//		
-//		root.getChildren().add(cubic);
-//	}
+		for(int i = 0; i < 34; i ++){
+			CubicCurve cubicCurve = new CubicCurve();
+			cubicCurve.setStartX(0+i*90);
+			cubicCurve.setStartY(150);
+			cubicCurve.setControlX1(30+i*90);
+			cubicCurve.setControlY1(50);
+			cubicCurve.setControlX2(80+i*90);
+			cubicCurve.setControlY2(250);
+			cubicCurve.setEndX(90+i*90);
+			cubicCurve.setEndY(150);
+			if ( i == 0 )
+			cubicCurve.setFill( Color.ANTIQUEWHITE );
+			else 
+				cubicCurve.setFill( Color.ANTIQUEWHITE );
+			
+			// cubicCurveList.add( cubicCurve );
+			g.getChildren().add(cubicCurve);
+		}
+		
+		
+		pathTransitionSinus.setDuration(Duration.millis(4000));
+		pathTransitionSinus.setPath(path);
+		pathTransitionSinus.setNode(g);
+		pathTransitionSinus.setOrientation(PathTransition.OrientationType.ORTHOGONAL_TO_TANGENT);
+		pathTransitionSinus.setCycleCount(Timeline.INDEFINITE);
+		pathTransitionSinus.setAutoReverse(true);
+		
+		return g;
+	}
+
 
 	@Override
 	public void start(Stage primaryStage) {
 		Group root = new Group();
 		Scene scene = new Scene(root, MainApplication.WIDTH , MainApplication.HEIGHT, Color.WHITE);
+		scene.addEventHandler(KeyEvent.KEY_PRESSED, (key) -> {
+
+		      if ( time >= 0 ){
+		    	  String message = key.getCode().toString();
+		    	  char character = message.charAt( message.length()-1);
+		    	  // DEBUG Feature to add .... 
+		    	  if ( ( character >= '0' ) && ( character <='9') ){
+		    		  multiplcatorFactor = character - '0';
+		    		  System.out.println("Multiplactof Factor : " + multiplcatorFactor);
+		    	  }
+		    	  
+		    	  portCommunication.sendMessage( character );  
+		    	  
+		      }
+		      
+		      
+		});
 		primaryStage.setScene(scene);
 		scene.getStylesheets().add(MainApplication.class.getResource("style.css").toExternalForm());
 		
 		createCircles(root, scene);
+		
+		root.getChildren().add( createCurve( new Group() ) );
 
 		root.getChildren().add( createButtonGo() );
 		
 		// drawCurve(root , 0 , 0 , 100 , 200);
 		root.getChildren().add(  createCounterText() );
+		
+		root.getChildren().add( createCalculationText( ) );
 
 		primaryStage.show();
+		pathTransitionSinus.play();
+		pathTransitionCalculationText.play();
 
 		primaryStage.setOnCloseRequest(new EventHandler<WindowEvent>() {
             @Override
             public void handle(WindowEvent t) {
-            	if ( mindwaveThread != null ){
-            		mindwaveThread.interrupt();	
-            	}
-                Platform.exit();
-                System.exit(0);
+            	exit();
             }
+
         });
-		
+		playMusic();
 	}
+	
+	
+	private Text createCalculationText(){
+		
+		this.calculationText.setText( "" );
+		this.calculationText.setTextAlignment(TextAlignment.RIGHT);
+		this.calculationText.setId("calculationtext");
+		this.calculationText.setFill(Color.RED);
+		this.calculationText.setX(MainApplication.WIDTH *0.18);
+		this.calculationText.setY( MainApplication.HEIGHT *0.8);
+		this.calculationText.setText("");
+		
+		Path path = new Path();
+		path.getElements().add(new MoveTo( MainApplication.HEIGHT ,-400));
+		path.getElements().add(new LineTo( MainApplication.HEIGHT, MainApplication.WIDTH*0.6  ) );
+		
+		this.pathTransitionCalculationText.setDuration(Duration.millis(4000));
+		this.pathTransitionCalculationText.setPath( path );
+		this.pathTransitionCalculationText.setNode( this.calculationText );
+		this.pathTransitionCalculationText.setOrientation(PathTransition.OrientationType.NONE);
+		this.pathTransitionCalculationText.setCycleCount(Timeline.INDEFINITE);
+		this.pathTransitionCalculationText.setAutoReverse(true);
+		
+		return this.calculationText;
+	}
+
 	
 	
 	private Text createCounterText(){
@@ -204,6 +269,7 @@ public class MainApplication extends Application {
 				mindwaveThread = new Thread(new Mindwave(data));
 				mindwaveThread.start();
 				goButton.setVisible(false);
+				changeCalculationText();
 				
 				PauseTransition wait = new PauseTransition(Duration.seconds(5));
 				wait.setOnFinished((e) -> {
@@ -221,8 +287,11 @@ public class MainApplication extends Application {
 						counter.playFromStart();	
 					}else{
 						goButton.setVisible(true);
-						time = 50;
+						time = 50;						
 					}
+					
+					
+					
 				});
 				counter.play();
 
@@ -239,13 +308,59 @@ public class MainApplication extends Application {
 			rate = rate / 100 + 1;
 			timeline.setRate(rate);
 			System.out.println("changeAnimation: " + rate);
-			timeline.play();
+			timeline.play();					
 		}
-		
-		
-		
-		
 
+		
+		changeCalculationText();
 	}
 
+	
+	private void exit() {
+		
+    	if ( mindwaveThread != null ){
+    		mindwaveThread.interrupt();	
+    	}
+    	portCommunication.close();
+        Platform.exit();
+        System.exit(0);
+	}
+	
+	
+	private void changeCalculationText(){
+		Random random = new Random();
+		int randomNumber1 = random.nextInt(10) ;
+		int randomNumber2 = random.nextInt(10) ;
+		int randomSymbole = random.nextInt(5);
+		String symbol = "+";
+		if ( randomSymbole > 2) {
+			symbol = "-";
+		}
+		if ( randomSymbole > 4) {
+			symbol = "/";
+		}		
+		this.calculationText.setText("" + randomNumber1 + symbol + randomNumber2);
+	}
+	
+	
+	private void playMusic(){
+		
+		
+		
+		
+		Media media = new Media( new File("2_Andante.mp3").toURI().toString() );
+		this.mediaPlayer = new MediaPlayer(media); 
+		this.mediaPlayer.setOnEndOfMedia(new Runnable() {
+	        @Override public void run() {
+	        	mediaPlayer.stop();
+	            
+	            Media media = new Media( new File("amclassical_piano_sonata_k_310_mvt_1.mp3").toURI().toString() );       
+	            MediaPlayer player1 = new MediaPlayer(media); 
+	            player1.play();
+	          }
+	        });
+		mediaPlayer.play();
+		  
+	}
+	
 }

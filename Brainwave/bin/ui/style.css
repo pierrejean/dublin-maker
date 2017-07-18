@@ -41,3 +41,12 @@
     
 }
 
+
+
+#calculationtext {
+    -fx-font: 580px Arial;
+    -fx-fill: linear-gradient(from 0% 0% to 100% 200%, repeat, aqua 10%, red 50%);
+    -fx-stroke: white;
+    -fx-stroke-width: 18;
+    
+}
